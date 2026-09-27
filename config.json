@@ -1,0 +1,10 @@
+{
+    "database_config": {
+        "mongodb_uri": "mongo_db_url",
+        "mongodb_database": "Vehicles_db"
+    },
+    "server": {
+        "url": "localhost",
+        "port": 3000
+    }
+}

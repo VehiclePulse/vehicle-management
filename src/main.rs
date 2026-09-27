@@ -1,49 +1,37 @@
 mod config;
 mod database;
 mod error;
+mod routes;
+mod simulator;
 mod state;
 mod telemetry;
-mod telemetry_repository;
 mod vehicle;
-mod vehicle_handler;
-mod vehicle_repository;
-
-use config::Config;
+use config::app_config::AppConfig;
 use state::AppState;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
 
-    let config = Config::from_env();
+    let config = AppConfig::load_config();
 
-    let database = database::connect(&config).await?;
-    let vehicle_repository = vehicle_repository::VehicleRepository::new(&database);
-    let telemetry_repository = telemetry_repository::TelemetryRepository::new(&database);
+    let database = database::connect(&config.database_config).await?;
+    let vehicle_repository = vehicle::repository::VehicleRepository::new(&database);
+    let telemetry_repository = telemetry::repository::TelemetryRepository::new(&database);
 
     let state = AppState {
-        database,
+        config,
         vehicle_repository,
         telemetry_repository,
     };
-    let app = axum::Router::new()
-        .route(
-            "/vehicles",
-            axum::routing::get(vehicle_handler::get_vehicles).post(vehicle_handler::create_vehicle),
-        )
-        .route(
-            "/vehicles/{id}",
-            axum::routing::get(vehicle_handler::get_vehicle)
-                .put(vehicle_handler::update_vehicle)
-                .delete(vehicle_handler::delete_vehicle),
-        )
-        .with_state(state);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
+    let server_url = format!("{}:{}", state.config.server.url, state.config.server.port);
 
+    let app = routes::create_router().with_state(state);
+
+    println!("Server is listening at {}", server_url);
+    let listener = tokio::net::TcpListener::bind(server_url).await?;
     axum::serve(listener, app).await?;
-
-    println!("Application started");
 
     Ok(())
 }

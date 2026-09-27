@@ -2,7 +2,7 @@ use futures_util::TryStreamExt;
 use mongodb::{Collection, bson::doc};
 use uuid::Uuid;
 
-use crate::vehicle::Vehicle;
+use crate::vehicle::model::Vehicle;
 
 #[derive(Clone)]
 pub struct VehicleRepository {

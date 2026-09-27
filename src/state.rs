@@ -1,11 +1,10 @@
-use mongodb::Database;
-
-use crate::telemetry_repository::TelemetryRepository;
-use crate::vehicle_repository::VehicleRepository;
+use crate::config::app_config::AppConfig;
+use crate::telemetry::repository::TelemetryRepository;
+use crate::vehicle::repository::VehicleRepository;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub database: Database,
+    pub config: AppConfig,
     pub vehicle_repository: VehicleRepository,
     pub telemetry_repository: TelemetryRepository,
 }

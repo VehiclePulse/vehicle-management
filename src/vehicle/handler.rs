@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 use crate::error::AppError;
 use crate::state::AppState;
-use crate::vehicle::{Vehicle, VehicleSimulation};
+use crate::vehicle::model::{Vehicle, VehicleSimulation};
 
 pub async fn get_vehicles(State(state): State<AppState>) -> Result<Json<Vec<Vehicle>>, AppError> {
     let vehicles = state
