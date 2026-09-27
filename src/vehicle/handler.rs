@@ -1,11 +1,11 @@
 use axum::Json;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
-use serde::Deserialize;
 
+use crate::extractors::validated_json::ValidatedJson;
 use crate::error::AppError;
 use crate::state::AppState;
-use crate::vehicle::model::{Vehicle, VehicleSimulation};
+use crate::vehicle::model::{Vehicle, CreateVehicleRequest, UpdateVehicleRequest};
 
 pub async fn get_vehicles(State(state): State<AppState>) -> Result<Json<Vec<Vehicle>>, AppError> {
     let vehicles = state
@@ -17,18 +17,9 @@ pub async fn get_vehicles(State(state): State<AppState>) -> Result<Json<Vec<Vehi
     Ok(Json(vehicles))
 }
 
-#[derive(Debug, Deserialize)]
-pub struct CreateVehicleRequest {
-    pub registration_number: String,
-    pub make: String,
-    pub model: String,
-    pub year: u16,
-    pub simulation: VehicleSimulation,
-}
-
 pub async fn create_vehicle(
     State(state): State<AppState>,
-    Json(request): Json<CreateVehicleRequest>,
+    ValidatedJson(request): ValidatedJson<CreateVehicleRequest>,
 ) -> Result<(StatusCode, Json<Vehicle>), AppError> {
     let vehicle = Vehicle {
         id: uuid::Uuid::new_v4(),
@@ -62,15 +53,6 @@ pub async fn get_vehicle(
         Some(vehicle) => Ok(Json(vehicle)),
         None => Err(AppError::NotFound),
     }
-}
-
-#[derive(Debug, Deserialize)]
-pub struct UpdateVehicleRequest {
-    pub registration_number: String,
-    pub make: String,
-    pub model: String,
-    pub year: u16,
-    pub simulation: VehicleSimulation,
 }
 
 pub async fn update_vehicle(

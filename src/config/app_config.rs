@@ -23,14 +23,16 @@ impl AppConfig {
     pub fn load_config() -> Self {
         let env = std::env::var("Environment").unwrap_or_else(|_| "Developement".to_string());
 
+
         let config_path = match env.as_str() {
-            "Production" => Path::new("/app/config/config.json"),
-            _ => Path::new(".././config.json"),
+            "Production" => Path::new("/app/config/config.json").to_path_buf(),
+            _ => Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("config.json"),
         };
 
-        println!("Staring application in {} mode", env);
+        println!("Starting application in {} mode", env);
 
-        let file = File::open(config_path).unwrap_or_else(|err| {
+        let file = File::open(&config_path).unwrap_or_else(|err| {
             panic!(
                 "config file not found in the path: {}, error: {}",
                 config_path.display(),

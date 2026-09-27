@@ -6,8 +6,11 @@ mod simulator;
 mod state;
 mod telemetry;
 mod vehicle;
+mod extractors;
+
 use config::app_config::AppConfig;
 use state::AppState;
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
