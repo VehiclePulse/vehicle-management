@@ -7,6 +7,8 @@ mod state;
 mod telemetry;
 mod vehicle;
 mod extractors;
+mod middleware;
+mod logging;
 
 use config::app_config::AppConfig;
 use state::AppState;
@@ -29,10 +31,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let server_url = format!("{}:{}", state.config.server.url, state.config.server.port);
+    logging::init(&state.config.log_level);
 
-    let app = routes::create_router().with_state(state);
 
-    println!("Server is listening at {}", server_url);
+    let app = routes::create_router()
+        .with_state(state)
+        .layer(axum::middleware::from_fn(crate::middleware::logging::request_logger));
+
+    tracing::info!(
+        server_url = %server_url,
+        "Starting server"
+    );
+
     let listener = tokio::net::TcpListener::bind(server_url).await?;
     axum::serve(listener, app).await?;
 

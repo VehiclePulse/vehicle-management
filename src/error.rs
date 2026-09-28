@@ -9,6 +9,7 @@ use serde::Serialize;
 pub enum AppError {
     NotFound,
     Database(mongodb::error::Error),
+    Business(String),
 }
 
 #[derive(Debug, Serialize)]
@@ -26,6 +27,14 @@ impl IntoResponse for AppError {
                 (
                     StatusCode::INTERNAL_SERVER_ERROR,
                     "Internal server error".to_string(),
+                )
+            },
+
+            AppError::Business(error) => {
+                tracing::error!("Business error: {}", error);
+                (
+                    StatusCode::UNPROCESSABLE_ENTITY,
+                    error.to_string(),
                 )
             }
         };

@@ -10,5 +10,9 @@ pub async fn connect(db_config: &DatabaseConfig) -> mongodb::error::Result<Datab
         .run_command(mongodb::bson::doc! {"ping": 1})
         .await?;
 
+    tracing::debug!(
+        "database is healthy"
+    );
+
     Ok(client.database(&db_config.mongodb_database))
 }

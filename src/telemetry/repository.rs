@@ -23,10 +23,22 @@ impl TelemetryRepository {
     }
 
     pub async fn upsert(&self, telemetry: Telemetry) -> mongodb::error::Result<()> {
-        self.collection
-            .replace_one(doc! { "_id": telemetry.vehicle_id }, telemetry)
+        let result = self.collection
+            .replace_one(doc! { "_id": telemetry.vehicle_id }, telemetry.clone())
             .upsert(true)
             .await?;
+
+        if let Some(_) = &result.upserted_id {
+            tracing::debug!(
+                vehicle_id = %telemetry.vehicle_id,
+                "document was inserted via upsert"
+            );
+        } else {
+            tracing::debug!(
+                vehicle_id = %telemetry.vehicle_id,
+                "document was updated via upsert"
+            );
+        }
 
         Ok(())
     }

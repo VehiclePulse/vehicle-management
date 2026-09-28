@@ -5,6 +5,7 @@ use std::{fs::File, io::BufReader, path::Path};
 pub struct AppConfig {
     pub database_config: DatabaseConfig,
     pub server: Server,
+    pub log_level: String
 }
 
 #[derive(Deserialize, Clone)]
@@ -30,7 +31,10 @@ impl AppConfig {
                 .join("config.json"),
         };
 
-        println!("Starting application in {} mode", env);
+        tracing::debug!(
+            mode = %env,
+            "Starting application"
+        );
 
         let file = File::open(&config_path).unwrap_or_else(|err| {
             panic!(

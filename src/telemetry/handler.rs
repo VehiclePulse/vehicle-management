@@ -1,24 +1,44 @@
 use crate::{
-    error::AppError,
-    state::AppState,
-    telemetry::model::{Telemetry, TirePressure},
+    error::AppError, 
+    extractors::validated_json::ValidatedJson, 
+    state::AppState, 
+    telemetry::model::{Telemetry, UpdateTelemetryRequest},
+    telemetry::validator::validate_manual_update
 };
 
 use axum::{
     Json,
     extract::{Path, State},
 };
-use serde::Deserialize;
 
 pub async fn get_vehicle_telemetry(
     State(state): State<AppState>,
     Path(vehicle_id): Path<uuid::Uuid>,
 ) -> Result<Json<Telemetry>, AppError> {
+    tracing::debug!(
+        vehicle_id = %vehicle_id,
+        "retrieving vehicle telemetry"
+    );
+
     let telemetry = state
         .telemetry_repository
         .get_by_vehicle_id(vehicle_id)
         .await
-        .map_err(AppError::Database)?;
+        .map_err(|error| {
+            tracing::error!(
+                vehicle_id = %vehicle_id,
+                error = %error,
+                "failed to retrieve telemetry"
+            );
+
+            AppError::Database(error)
+        }
+    )?;
+
+    tracing::info!(
+        vehicle_id = %vehicle_id,
+        "retrieved telemetry record"
+    );
 
     match telemetry {
         Some(telemetry) => Ok(Json(telemetry)),
@@ -26,25 +46,44 @@ pub async fn get_vehicle_telemetry(
     }
 }
 
-#[derive(Deserialize, Clone)]
-pub struct UpdateTelemetryRequest {
-    pub latitude: f64,
-    pub longitude: f64,
-    pub speed: f64,
-    pub heading: f64,
-
-    pub fuel_level: f64,
-    pub engine_temperature: f64,
-    pub battery_level: f64,
-
-    pub tire_pressure: TirePressure,
-}
-
 pub async fn update_vehicle_telemetry(
     State(state): State<AppState>,
     Path(vehicle_id): Path<uuid::Uuid>,
-    Json(request): Json<UpdateTelemetryRequest>,
+    ValidatedJson(request): ValidatedJson<UpdateTelemetryRequest>,
 ) -> Result<Json<Telemetry>, AppError> {
+    tracing::debug!(
+        vehicle_id= %vehicle_id,
+        "processing telemetry update"
+    );
+
+    let vehicle = state
+        .vehicle_repository
+        .get_by_id(vehicle_id)
+        .await
+        .map_err(|error| {
+            tracing::error!(
+                vehicle_id = %vehicle_id,
+                error = %error,
+                "failed to retrieve vehicle"
+            );
+
+            AppError::Database(error)
+        })?;
+
+    let vehicle = match vehicle {
+        Some(vehicle) => vehicle,
+        None => {
+            tracing::warn!(
+                vehicle_id = %vehicle_id,
+                "telemetry update rejected: vehicle not found"
+            );
+
+            return Err(AppError::NotFound)
+        } 
+    };
+
+    validate_manual_update(&vehicle)?;
+
     let telemetry = Telemetry {
         vehicle_id,
         latitude: request.latitude,
@@ -62,7 +101,20 @@ pub async fn update_vehicle_telemetry(
         .telemetry_repository
         .upsert(telemetry.clone())
         .await
-        .map_err(AppError::Database)?;
+        .map_err(|error| {
+            tracing::error!(
+                vehicle_id = %vehicle_id,
+                error = %error,
+                "failed to save telemetry"
+            );
+
+            AppError::Database(error)
+        })?;
+
+    tracing::info!(
+        vehicle_id = %vehicle_id,
+        "vehicle telemetry updated"
+    );
 
     Ok(Json(telemetry))
 }
