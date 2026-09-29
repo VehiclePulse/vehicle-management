@@ -49,3 +49,22 @@ impl AppConfig {
             .unwrap_or_else(|err| panic!("error occurred while reading json file: {}", err))
     }
 }
+
+
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+
+//     #[test]
+//     fn loads_config_from_default_environment() {
+//         // std::env::remove_var("Environment");
+
+//         let config = AppConfig::load_config();
+
+//         assert!(!config.database_config.mongodb_database.is_empty());
+//         assert!(!config.database_config.mongodb_uri.is_empty());
+//         assert!(!config.server.url.is_empty());
+//         assert!(!config.server.port > 0);
+//         assert!(!config.log_level.is_empty());
+//     }   
+// }

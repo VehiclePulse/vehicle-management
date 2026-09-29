@@ -1,17 +1,13 @@
-mod config;
-mod database;
-mod error;
-mod routes;
-mod simulator;
-mod state;
-mod telemetry;
-mod vehicle;
-mod extractors;
-mod middleware;
-mod logging;
-
-use config::app_config::AppConfig;
-use state::AppState;
+use vehicle_management::{
+    database,
+    config::app_config::AppConfig,
+    vehicle,
+    telemetry,
+    state::AppState,
+    routes,
+    middleware,
+    logging
+};
 
 
 #[tokio::main]
@@ -36,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app = routes::create_router()
         .with_state(state)
-        .layer(axum::middleware::from_fn(crate::middleware::logging::request_logger));
+        .layer(axum::middleware::from_fn(middleware::logging::request_logger));
 
     tracing::info!(
         server_url = %server_url,

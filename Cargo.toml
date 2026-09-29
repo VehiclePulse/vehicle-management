@@ -1,5 +1,5 @@
 [package]
-name = "vehicle-telemetry"
+name = "vehicle-management"
 version = "0.1.0"
 edition = "2024"
 

@@ -5,7 +5,7 @@ use axum::http::StatusCode;
 use crate::extractors::validated_json::ValidatedJson;
 use crate::error::AppError;
 use crate::state::AppState;
-use crate::vehicle::model::{Vehicle, CreateVehicleRequest, UpdateVehicleRequest};
+use crate::vehicle::model::{Vehicle, VehicleRequest};
 
 pub async fn get_vehicles(State(state): State<AppState>) -> Result<Json<Vec<Vehicle>>, AppError> {
     let vehicles = state
@@ -30,7 +30,7 @@ pub async fn get_vehicles(State(state): State<AppState>) -> Result<Json<Vec<Vehi
 
 pub async fn create_vehicle(
     State(state): State<AppState>,
-    ValidatedJson(request): ValidatedJson<CreateVehicleRequest>,
+    ValidatedJson(request): ValidatedJson<VehicleRequest>,
 ) -> Result<(StatusCode, Json<Vehicle>), AppError> {
     let vehicle = Vehicle {
         id: uuid::Uuid::new_v4(),
@@ -95,7 +95,7 @@ pub async fn get_vehicle(
 pub async fn update_vehicle(
     State(state): State<AppState>,
     Path(id): Path<uuid::Uuid>,
-    Json(request): Json<UpdateVehicleRequest>,
+    Json(request): Json<VehicleRequest>,
 ) -> Result<Json<Vehicle>, AppError> {
     let vehicle = Vehicle {
         id,
