@@ -9,6 +9,7 @@ pub struct Telemetry {
     #[serde(with = "bson::serde_helpers::uuid_1_as_binary")]
     pub vehicle_id: Uuid,
 
+    pub registration_number: String,
     pub latitude: f64,
     pub longitude: f64,
     pub speed: f64,

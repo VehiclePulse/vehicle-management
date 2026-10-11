@@ -24,7 +24,6 @@ impl AppConfig {
     pub fn load_config() -> Self {
         let env = std::env::var("Environment").unwrap_or_else(|_| "Developement".to_string());
 
-
         let config_path = match env.as_str() {
             "Production" => Path::new("/app/config/config.json").to_path_buf(),
             _ => Path::new(env!("CARGO_MANIFEST_DIR"))

@@ -1,7 +1,7 @@
 {
     "database_config": {
         "mongodb_uri": "mongodb://admin:admin_password@localhost:27017",
-        "mongodb_database": "Vehicles_db"
+        "mongodb_database": "vehicle_db"
     },
     "server": {
         "url": "localhost",

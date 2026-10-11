@@ -1,6 +1,5 @@
 use futures_util::TryStreamExt;
 use mongodb::{Collection, bson::doc};
-use uuid::Uuid;
 
 use crate::vehicle::model::Vehicle;
 
@@ -21,8 +20,8 @@ impl VehicleRepository {
         Ok(())
     }
 
-    pub async fn get_by_id(&self, id: Uuid) -> mongodb::error::Result<Option<Vehicle>> {
-        self.collection.find_one(doc! { "_id": id }).await
+    pub async fn get_by_registration_number(&self, registration_number: String) -> mongodb::error::Result<Option<Vehicle>> {
+        self.collection.find_one(doc! { "registration_number": registration_number }).await
     }
 
     pub async fn get_all(&self) -> mongodb::error::Result<Vec<Vehicle>> {
@@ -37,17 +36,17 @@ impl VehicleRepository {
         Ok(vehicles)
     }
 
-    pub async fn update(&self, id: Uuid, vehicle: Vehicle) -> mongodb::error::Result<bool> {
+    pub async fn update(&self, registration_number: String, vehicle: Vehicle) -> mongodb::error::Result<bool> {
         let result = self
             .collection
-            .replace_one(doc! {"_id": id}, vehicle)
+            .replace_one(doc! {"registration_number": registration_number}, vehicle)
             .await?;
 
         Ok(result.modified_count == 1)
     }
 
-    pub async fn delete(&self, id: Uuid) -> mongodb::error::Result<bool> {
-        let result = self.collection.delete_one(doc! { "_id": id }).await?;
+    pub async fn delete(&self, registration_number: String) -> mongodb::error::Result<bool> {
+        let result = self.collection.delete_one(doc! { "registration_number": registration_number }).await?;
 
         Ok(result.deleted_count == 1)
     }
