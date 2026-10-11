@@ -7,22 +7,22 @@ use axum::{
     extract::{Path, State},
 };
 
-pub async fn create_telemetry(
-    State(state): State<AppState>,
-    Json(telemetry): Json<Telemetry>
-) -> Result<Json<Telemetry>, AppError> {
-    tracing::debug!(
-        registration_number = %&telemetry.registration_number,
-        "creating the telemetry"
-    );
+// pub async fn create_telemetry(
+//     State(state): State<AppState>,
+//     Json(telemetry): Json<Telemetry>
+// ) -> Result<Json<Telemetry>, AppError> {
+//     tracing::debug!(
+//         registration_number = %&telemetry.registration_number,
+//         "creating the telemetry"
+//     );
 
-    state
-        .telemetry_repository
-        .add_telemetry(telemetry.clone())
-        .await?;
+//     state
+//         .telemetry_repository
+//         .add_telemetry(telemetry.clone())
+//         .await?;
 
-    Ok(Json(telemetry))
-}
+//     Ok(Json(telemetry))
+// }
 
 pub async fn get_vehicle_telemetry(
     State(state): State<AppState>,

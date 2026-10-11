@@ -10,7 +10,7 @@ pub fn routes() -> Router<AppState> {
             get(handler::get_vehicles).post(handler::create_vehicle),
         )
         .route(
-            "/vehicles/{id}",
+            "/vehicles/{registration_number}",
             get(handler::get_vehicle)
                 .put(handler::update_vehicle)
                 .delete(handler::delete_vehicle),

@@ -5,8 +5,9 @@ use crate::telemetry::handler;
 
 pub fn routes() -> Router<AppState> {
     Router::new().route(
-        "/vehicles/{id}/telemetry",
+        "/vehicles/{registration_number}/telemetry",
         get(handler::get_vehicle_telemetry)
-        .put(handler::update_vehicle_telemetry),
+        .put(handler::update_vehicle_telemetry)
+        //.post(handler::create_telemetry)
     )
 }

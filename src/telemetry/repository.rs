@@ -14,37 +14,37 @@ impl TelemetryRepository {
         }
     }
 
-    pub async fn add_telemetry(
-        &self,
-        telemetry: Telemetry
-    ) -> Result<(), AppError> {
-        let vehicle = self.collection.find_one(doc! {
-            "registration_number": telemetry.registration_number.clone()
-        }).await.map_err(AppError::Database)?; 
+    // pub async fn add_telemetry(
+    //     &self,
+    //     telemetry: Telemetry
+    // ) -> Result<(), AppError> {
+    //     let vehicle = self.collection.find_one(doc! {
+    //         "registration_number": telemetry.registration_number.clone()
+    //     }).await.map_err(AppError::Database)?; 
         
-        match vehicle {
-            Some(_) => {
-                tracing::debug!(
-                    registration_number = %telemetry.registration_number,
-                    "updating telemetry for vehicle"
-                );
+    //     match vehicle {
+    //         Some(_) => {
+    //             tracing::debug!(
+    //                 registration_number = %telemetry.registration_number,
+    //                 "updating telemetry for vehicle"
+    //             );
 
-                self.collection.insert_one(telemetry)
-                    .await.map_err(AppError::Database)?;
+    //             self.collection.insert_one(telemetry)
+    //                 .await.map_err(AppError::Database)?;
 
-                Ok(())
-            },
-            None => {
-                tracing::error!(
-                    registration_number = %telemetry.registration_number,
-                    "no vehicle found to update the telemetry"
-                );
+    //             Ok(())
+    //         },
+    //         None => {
+    //             tracing::error!(
+    //                 registration_number = %telemetry.registration_number,
+    //                 "no vehicle found to update the telemetry"
+    //             );
 
-                Err(AppError::NotFound)
-            }
-        }
+    //             Err(AppError::NotFound)
+    //         }
+    //     }
 
-    }
+    // }
 
     pub async fn get_by_vehicle_id(
         &self,
