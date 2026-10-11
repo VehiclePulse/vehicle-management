@@ -1,6 +1,6 @@
 use mongodb::{Collection, bson::doc};
 
-use crate::{error::AppError, telemetry::model::Telemetry};
+use crate::{telemetry::model::Telemetry};
 
 #[derive(Clone)]
 pub struct TelemetryRepository {
