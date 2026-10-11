@@ -7,7 +7,9 @@ pub fn routes() -> Router<AppState> {
     Router::new().route(
         "/vehicles/{registration_number}/telemetry",
         get(handler::get_vehicle_telemetry)
-        .put(handler::update_vehicle_telemetry)
-        //.post(handler::create_telemetry)
+        .put(handler::update_vehicle_telemetry),
+    )
+    .route("/vehicles/telemetry/batch", 
+        get(handler::get_vehicles_telemetry)
     )
 }

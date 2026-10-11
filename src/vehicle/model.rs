@@ -47,6 +47,11 @@ pub struct VehicleRequest {
     pub simulation: VehicleSimulation,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct GetActiveSimulation {
+    pub enabled: Option<bool>
+}
+
 
 #[cfg(test)]
 mod tests {

@@ -1,7 +1,7 @@
 use futures_util::TryStreamExt;
 use mongodb::{Collection, bson::doc};
 
-use crate::vehicle::model::Vehicle;
+use crate::vehicle::model::{GetActiveSimulation, Vehicle};
 
 #[derive(Clone)]
 pub struct VehicleRepository {
@@ -24,8 +24,15 @@ impl VehicleRepository {
         self.collection.find_one(doc! { "registration_number": registration_number }).await
     }
 
-    pub async fn get_all(&self) -> mongodb::error::Result<Vec<Vehicle>> {
-        let mut cursor = self.collection.find(doc! {}).await?;
+    pub async fn get_all(&self, params: GetActiveSimulation) -> mongodb::error::Result<Vec<Vehicle>> {
+
+        let mut filter = doc! {};
+
+        if let Some(is_enabled) = params.enabled {
+            filter.insert("simulation.enabled", is_enabled);
+        }
+
+        let mut cursor = self.collection.find(filter).await?;
 
         let mut vehicles = Vec::new();
 

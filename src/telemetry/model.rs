@@ -67,6 +67,12 @@ pub struct UpdateTelemetryRequest {
     pub tire_pressure: TirePressure,
 }
 
+#[derive(Deserialize)]
+pub struct BatchTelemetryRequest {
+    pub registration_numbers: Vec<String>
+}
+
+
 #[cfg(test)] 
 mod tests {
     use core::panic;

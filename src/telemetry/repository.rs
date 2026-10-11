@@ -1,6 +1,7 @@
 use mongodb::{Collection, bson::doc};
+use futures::stream::TryStreamExt;
 
-use crate::{telemetry::model::Telemetry};
+use crate::{telemetry::model::{Telemetry}};
 
 #[derive(Clone)]
 pub struct TelemetryRepository {
@@ -14,37 +15,21 @@ impl TelemetryRepository {
         }
     }
 
-    // pub async fn add_telemetry(
-    //     &self,
-    //     telemetry: Telemetry
-    // ) -> Result<(), AppError> {
-    //     let vehicle = self.collection.find_one(doc! {
-    //         "registration_number": telemetry.registration_number.clone()
-    //     }).await.map_err(AppError::Database)?; 
-        
-    //     match vehicle {
-    //         Some(_) => {
-    //             tracing::debug!(
-    //                 registration_number = %telemetry.registration_number,
-    //                 "updating telemetry for vehicle"
-    //             );
+    pub async fn get_telemetry_for_multiple_vehicles(
+        &self,
+        registration_numbers: Vec<String>
+    ) -> mongodb::error::Result<Vec<Telemetry>>{
+        let filter = doc! {
+            "registration_number": { "$in": registration_numbers }
+        };
 
-    //             self.collection.insert_one(telemetry)
-    //                 .await.map_err(AppError::Database)?;
+        let cursor = self.collection.find(filter)
+            .await?;
 
-    //             Ok(())
-    //         },
-    //         None => {
-    //             tracing::error!(
-    //                 registration_number = %telemetry.registration_number,
-    //                 "no vehicle found to update the telemetry"
-    //             );
+        let telemetry_list: Vec<Telemetry> = cursor.try_collect().await?;
 
-    //             Err(AppError::NotFound)
-    //         }
-    //     }
-
-    // }
+        Ok(telemetry_list)
+    }
 
     pub async fn get_by_vehicle_id(
         &self,

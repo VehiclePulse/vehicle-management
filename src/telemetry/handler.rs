@@ -1,28 +1,30 @@
 use crate::{
-    error::AppError, extractors::validated_json::ValidatedJson, state::AppState, telemetry::{model::{Telemetry, UpdateTelemetryRequest}, validator::validate_manual_update}
+    error::AppError, extractors::validated_json::ValidatedJson, state::AppState, 
+    telemetry::{model::{Telemetry, UpdateTelemetryRequest, BatchTelemetryRequest}, validator::validate_manual_update}
 };
 
 use axum::{
-    Json,
-    extract::{Path, State},
+    Json, extract::{Path, State},
 };
 
-// pub async fn create_telemetry(
-//     State(state): State<AppState>,
-//     Json(telemetry): Json<Telemetry>
-// ) -> Result<Json<Telemetry>, AppError> {
-//     tracing::debug!(
-//         registration_number = %&telemetry.registration_number,
-//         "creating the telemetry"
-//     );
+pub async fn get_vehicles_telemetry(
+    State(state): State<AppState>,
+    Json(body): Json<BatchTelemetryRequest>
+) -> Result<Json<Vec<Telemetry>>, AppError>  {
+    if body.registration_numbers.is_empty() {
+        return Err(AppError::Business(
+            "Vehicle id's cannot be empty".to_string()
+        ));
+    } 
 
-//     state
-//         .telemetry_repository
-//         .add_telemetry(telemetry.clone())
-//         .await?;
-
-//     Ok(Json(telemetry))
-// }
+    match state
+        .telemetry_repository
+        .get_telemetry_for_multiple_vehicles(body.registration_numbers)
+        .await {
+            Ok(telemetry_list) => Ok(Json(telemetry_list)),
+            Err(err) => Err(AppError::Database(err))
+        }
+}
 
 pub async fn get_vehicle_telemetry(
     State(state): State<AppState>,
