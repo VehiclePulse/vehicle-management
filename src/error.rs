@@ -107,7 +107,7 @@ mod tests {
         let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
 
         assert_eq!(
-            body["error"], "Internal server error"
+            body["error"], "Database failure"
         );
     }
 }
