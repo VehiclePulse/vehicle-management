@@ -29,7 +29,7 @@ impl VehicleRepository {
         let mut filter = doc! {};
 
         if let Some(is_enabled) = params.enabled {
-            filter.insert("simulation.enabled", is_enabled);
+            filter.insert("simulation", is_enabled);
         }
 
         let mut cursor = self.collection.find(filter).await?;

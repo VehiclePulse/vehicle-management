@@ -4,7 +4,7 @@ use crate::{
 };
 
 pub fn validate_manual_update(vehicle: &Vehicle) -> Result<(), AppError> {
-    if vehicle.simulation.enabled {
+    if vehicle.simulation {
         return Err(AppError::Business(
             "Telemetry manually cannot be updated for a simulated vehicle".to_string()
         ));
@@ -16,7 +16,7 @@ pub fn validate_manual_update(vehicle: &Vehicle) -> Result<(), AppError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::vehicle::model::{Vehicle, VehicleSimulation};
+    use crate::vehicle::model::Vehicle;
     use uuid::Uuid;
 
     fn create_vehicle(simulation_enabled: bool) -> Vehicle {
@@ -26,12 +26,7 @@ mod tests {
             make: "Toyota".to_string(),
             model: "Camry".to_string(),
             year: 2024,
-            simulation: VehicleSimulation { 
-                enabled: simulation_enabled, 
-                initial_latitude: 12.9716, 
-                initial_longitude: 77.5946, 
-                initial_heading: 90.0 
-            }
+            simulation: simulation_enabled
         }
     }
 
