@@ -9,3 +9,4 @@ pub mod vehicle;
 pub mod extractors;
 pub mod middleware;
 pub mod logging;
+pub mod errors;

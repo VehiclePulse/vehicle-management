@@ -1,15 +1,17 @@
 use axum::Json;
-use axum::extract::{Path, State, Query};
+use axum::extract::{Path, State};
 use axum::http::StatusCode;
 
-use crate::extractors::validated_json::ValidatedJson;
+use crate::extractors::validate_json::ValidateJson;
+use crate::extractors::validate_query::ValidateQuery;
 use crate::error::AppError;
+use crate::errors::error_details::ErrorDetails;
 use crate::state::AppState;
 use crate::vehicle::model::{Vehicle, VehicleRequest, GetActiveSimulation};
 
 pub async fn get_vehicles( 
     State(state): State<AppState>,
-    Query(params): Query<GetActiveSimulation>
+    ValidateQuery(params): ValidateQuery<GetActiveSimulation>
 ) -> Result<Json<Vec<Vehicle>>, AppError> {
     let vehicles = state
         .vehicle_repository
@@ -33,7 +35,7 @@ pub async fn get_vehicles(
 
 pub async fn create_vehicle(
     State(state): State<AppState>,
-    ValidatedJson(request): ValidatedJson<VehicleRequest>,
+    ValidateJson(request): ValidateJson<VehicleRequest>,
 ) -> Result<(StatusCode, Json<Vehicle>), AppError> {
     let vehicle = Vehicle {
         id: uuid::Uuid::new_v4(),

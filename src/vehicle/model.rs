@@ -29,15 +29,16 @@ pub struct VehicleSimulation {
 }
 
 #[derive(Debug, Deserialize, Validate)]
+#[serde(deny_unknown_fields)]
 pub struct VehicleRequest {
 
-    #[validate(length(min = 1, max = 14, message = "registration number doesn't satisfy defined length"))]
+    #[validate(length(min = 4, max = 14, message = "registration number doesn't satisfy defined length"))]
     pub registration_number: String,
 
-    #[validate(length(min = 1, max = 20, message = "make doesn't satisfy defined length"))]
+    #[validate(length(min = 4, max = 20, message = "make doesn't satisfy defined length"))]
     pub make: String,
 
-    #[validate(length(min = 1, max = 20, message = "model doesn't satisfy defined length"))]
+    #[validate(length(min = 4, max = 20, message = "model doesn't satisfy defined length"))]
     pub model: String,
 
     #[validate(range(min = 1990, max = 2100, message = "year doesn't satisfy defined range"))]

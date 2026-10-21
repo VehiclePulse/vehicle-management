@@ -1,5 +1,5 @@
 use crate::{
-    error::AppError, extractors::validated_json::ValidatedJson, state::AppState, 
+    error::AppError, extractors::validate_json::ValidateJson, state::AppState, 
     telemetry::{model::{Telemetry, UpdateTelemetryRequest, BatchTelemetryRequest}, validator::validate_manual_update}
 };
 
@@ -64,7 +64,7 @@ pub async fn get_vehicle_telemetry(
 pub async fn update_vehicle_telemetry(
     State(state): State<AppState>,
     Path(registration_number): Path<String>,
-    ValidatedJson(request): ValidatedJson<UpdateTelemetryRequest>,
+    ValidateJson(request): ValidateJson<UpdateTelemetryRequest>,
 ) -> Result<Json<Telemetry>, AppError> {
     tracing::debug!(
         registration_number= %registration_number,
