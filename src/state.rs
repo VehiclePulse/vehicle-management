@@ -1,10 +1,10 @@
 use crate::config::app_config::AppConfig;
 use crate::telemetry::repository::TelemetryRepository;
-use crate::vehicle::repository::VehicleRepository;
+use crate::vehicle::service::VehicleService;
 
 #[derive(Clone)]
 pub struct AppState {
     pub config: AppConfig,
-    pub vehicle_repository: VehicleRepository,
+    pub vehicle_service: VehicleService,
     pub telemetry_repository: TelemetryRepository,
 }

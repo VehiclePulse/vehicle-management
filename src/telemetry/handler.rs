@@ -1,6 +1,5 @@
 use crate::{
-    error::AppError, extractors::validate_json::ValidateJson, state::AppState, 
-    telemetry::{model::{Telemetry, UpdateTelemetryRequest, BatchTelemetryRequest}, validator::validate_manual_update}
+    error::AppError, errors::error_types::{AppErrorKind, InfraError}, extractors::validate_json::ValidateJson, state::AppState, telemetry::{model::{BatchTelemetryRequest, Telemetry, UpdateTelemetryRequest}, validator::validate_manual_update}
 };
 
 use axum::{
@@ -65,37 +64,16 @@ pub async fn update_vehicle_telemetry(
     State(state): State<AppState>,
     Path(registration_number): Path<String>,
     ValidateJson(request): ValidateJson<UpdateTelemetryRequest>,
-) -> Result<Json<Telemetry>, AppError> {
+) -> Result<Json<Telemetry>, AppErrorKind> {
     tracing::debug!(
         registration_number= %registration_number,
         "processing telemetry update"
     );
 
     let vehicle = state
-        .vehicle_repository
+        .vehicle_service
         .get_by_registration_number(registration_number.clone())
-        .await
-        .map_err(|error| {
-            tracing::error!(
-                registration_number = %registration_number,
-                error = %error,
-                "failed to retrieve vehicle"
-            );
-
-            AppError::Database(error)
-        })?;
-
-    let vehicle = match vehicle {
-        Some(vehicle) => vehicle,
-        None => {
-            tracing::warn!(
-                registration_number = %registration_number,
-                "telemetry update rejected: vehicle not found"
-            );
-
-            return Err(AppError::NotFound)
-        } 
-    };
+        .await?;
 
     validate_manual_update(&vehicle)?;
 
@@ -124,7 +102,12 @@ pub async fn update_vehicle_telemetry(
                 "failed to save telemetry"
             );
 
-            AppError::Database(error)
+            AppErrorKind::Infrastructure(
+                InfraError::Database(
+                    anyhow::Error::new(error)
+                    .context("Failed to update telemetry")
+                )
+            )
         })?;
 
     tracing::info!(

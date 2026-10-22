@@ -20,8 +20,13 @@ impl VehicleRepository {
         Ok(())
     }
 
-    pub async fn get_by_registration_number(&self, registration_number: String) -> mongodb::error::Result<Option<Vehicle>> {
-        self.collection.find_one(doc! { "registration_number": registration_number }).await
+    pub async fn get_by_registration_number(
+        &self, 
+        registration_number: String
+    ) -> mongodb::error::Result<Option<Vehicle>> {
+        self.collection
+        .find_one(doc! { "registration_number": registration_number })
+        .await
     }
 
     pub async fn get_all(&self, params: GetActiveSimulation) -> mongodb::error::Result<Vec<Vehicle>> {

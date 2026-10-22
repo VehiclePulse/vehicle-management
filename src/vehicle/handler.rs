@@ -1,42 +1,43 @@
 use axum::Json;
 use axum::extract::{Path, State};
-use axum::http::StatusCode;
+use axum::http::{HeaderMap, header};
+use axum::http::{StatusCode, HeaderValue};
+use axum::response::{IntoResponse, Response};
 
+use crate::errors::error_types::{AppErrorKind, DomainError};
 use crate::extractors::validate_json::ValidateJson;
 use crate::extractors::validate_query::ValidateQuery;
-use crate::error::AppError;
-use crate::errors::error_details::ErrorDetails;
 use crate::state::AppState;
 use crate::vehicle::model::{Vehicle, VehicleRequest, GetActiveSimulation};
 
 pub async fn get_vehicles( 
     State(state): State<AppState>,
     ValidateQuery(params): ValidateQuery<GetActiveSimulation>
-) -> Result<Json<Vec<Vehicle>>, AppError> {
+) -> Result<Response, AppErrorKind> {
     let vehicles = state
-        .vehicle_repository
+        .vehicle_service
         .get_all(params)
-        .await
-        .map_err(|error| {
-            tracing::error!(
-                error = %error,
-                "failed retrieving all vehicles details"
-            );
+        .await?;
 
-            AppError::Database(error)
-        })?;
+    if vehicles.is_empty() {
+        tracing::info!(
+            "retrieved zero vehicles details"
+        );
+        
+        return Ok(StatusCode::NO_CONTENT.into_response());
+    }
 
     tracing::info!(
         "retrieved all vehicles details"
     );
 
-    Ok(Json(vehicles))
+    Ok(Json(vehicles).into_response())
 }
 
 pub async fn create_vehicle(
     State(state): State<AppState>,
     ValidateJson(request): ValidateJson<VehicleRequest>,
-) -> Result<(StatusCode, Json<Vehicle>), AppError> {
+) -> Result<Response, AppErrorKind> {
     let vehicle = Vehicle {
         id: uuid::Uuid::new_v4(),
         registration_number: request.registration_number,
@@ -46,84 +47,75 @@ pub async fn create_vehicle(
         simulation: request.simulation,
     };
 
-    state
-        .vehicle_repository
-        .create(vehicle.clone())
-        .await
-        .map_err(|error| {
-            tracing::error!(
-                vehicle_id = %vehicle.id,
-                error = %error,
-                "vehicle saving failed"
-            );
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        header::LOCATION,
+        HeaderValue::from_str(&format!(
+            "/vehicles/{}",
+            vehicle.registration_number
+        ))
+        .map_err(|_| {
+            AppErrorKind::InvalidRouteValue
+        })?,
+    );
 
-            AppError::Database(error)
-        })?;
+    println!("after wrong input");
+
+    state
+        .vehicle_service
+        .create(vehicle.clone())
+        .await?;
+
+    println!("inserted vehicle");
 
     tracing::info!(
         vehicle_id = %vehicle.id,
         "vehicle record created successfully"
     );
 
-    Ok((StatusCode::CREATED, Json(vehicle)))
+    Ok(
+        (StatusCode::CREATED, headers, Json(vehicle))
+        .into_response()
+    )
 }
 
 pub async fn get_vehicle(
     State(state): State<AppState>,
     Path(registration_number): Path<String>,
-) -> Result<Json<Vehicle>, AppError> {
+) -> Result<Response, AppErrorKind> {
     let vehicle = state
-        .vehicle_repository
+        .vehicle_service
         .get_by_registration_number(registration_number.clone())
-        .await
-        .map_err(|error| {
-            tracing::error!(
-                registration_number = %registration_number,
-                error = %error,
-                "retrieving vehicle failed"
-            );
-
-            AppError::Database(error)
-        })?;
+        .await?;
 
     tracing::info!(
         registration_number = %registration_number,
         "retrieving vehicle record"
     );
 
-    match vehicle {
-        Some(vehicle) => Ok(Json(vehicle)),
-        None => Err(AppError::NotFound),
-    }
+    Ok((
+        StatusCode::OK,
+        Json(vehicle)
+    ).into_response()
+    )
 }
 
 pub async fn update_vehicle(
     State(state): State<AppState>,
     Path(registration_number): Path<String>,
     Json(request): Json<VehicleRequest>,
-) -> Result<Json<Vehicle>, AppError> {
-    
-    let existing_vehicle = state.vehicle_repository.get_by_registration_number(registration_number.clone()).await.
-        map_err(|error| {
-                tracing::error!(
-                    registration_number = %registration_number,
-                    error = %error,
-                    "retrieving vehicle failed"
-                );
+) -> Result<Response, AppErrorKind> {
+    tracing::info!(
+        vehicle_id = %registration_number,
+        "updating vehicle record"
+    );
 
-                AppError::Database(error)
-            })?;
-
-    let Some(existing) = existing_vehicle else {
-        tracing::error!(
-            registration_number = %registration_number,
-            "vehicle not found"
-        );
-        return Err(AppError::NotFound);
-    };
+    let existing_vehicle = state.vehicle_service
+        .get_by_registration_number(registration_number.clone())
+        .await?;
 
     let vehicle = Vehicle {
-        id: existing.id,
+        id: existing_vehicle.id,
         registration_number: request.registration_number,
         make: request.make,
         model: request.model,
@@ -132,61 +124,34 @@ pub async fn update_vehicle(
     };
 
     let updated = state
-        .vehicle_repository
+        .vehicle_service
         .update(registration_number.clone(), vehicle.clone())
-        .await
-        .map_err(|error| {
-            tracing::error!(
-                vehicle_id = %registration_number,
-                error = %error,
-                "failed to update vehicle record"
-            );
-
-            AppError::Database(error)
-        })?;
-
-    tracing::info!(
-        vehicle_id = %registration_number,
-        "updating vehicle record"
-    );
+        .await?;
 
     if !updated {
-        return Err(AppError::NotFound);
+        return Err(DomainError::VehicleNotFound.into());
     }
 
-    Ok(Json(vehicle))
+    Ok(StatusCode::NO_CONTENT.into_response())
 }
 
 pub async fn delete_vehicle(
     State(state): State<AppState>,
     Path(registration_number): Path<String>,
-) -> Result<StatusCode, AppError> {
-    let deleted = state
-        .vehicle_repository
-        .delete(registration_number.clone())
-        .await
-        .map_err(|error| {
-            tracing::error!(
-                vehicle_id = %registration_number,
-                error = %error,
-                "deleting vehicle failed"
-            );
-
-            AppError::Database(error)
-        })?;
-
+) -> Result<Response, AppErrorKind> {
     tracing::info!(
         vehicle_id = %registration_number,
         "deleting vehicle record"
     );
 
-    if !deleted {
-        tracing::error!(
-            vehicle_id = %registration_number,
-            "error deleting vehicle"
-        );
-        return Err(AppError::NotFound);
+    let status = state
+        .vehicle_service
+        .delete(registration_number.clone())
+        .await?;
+
+    if !status {
+        return Err(DomainError::VehicleNotFound.into());
     }
 
-    Ok(StatusCode::NO_CONTENT)
+    Ok(StatusCode::NO_CONTENT.into_response())
 }

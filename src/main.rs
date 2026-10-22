@@ -19,10 +19,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let database = database::connect(&config.database_config).await?;
     let vehicle_repository = vehicle::repository::VehicleRepository::new(&database);
     let telemetry_repository = telemetry::repository::TelemetryRepository::new(&database);
+    let vehicle_service = vehicle::service::VehicleService::new(vehicle_repository);
 
     let state = AppState {
         config,
-        vehicle_repository,
+        vehicle_service,
         telemetry_repository,
     };
 
