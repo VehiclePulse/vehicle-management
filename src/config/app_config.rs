@@ -5,7 +5,8 @@ use std::{fs::File, io::BufReader, path::Path};
 pub struct AppConfig {
     pub database_config: DatabaseConfig,
     pub server: Server,
-    pub log_level: String
+    pub log_level: String,
+    pub rabbitmq: Rabbitmq
 }
 
 #[derive(Deserialize, Clone)]
@@ -18,6 +19,12 @@ pub struct DatabaseConfig {
 pub struct Server {
     pub url: String,
     pub port: u16,
+}
+
+#[derive(Deserialize, Clone)]
+pub struct Rabbitmq {
+    pub url: String,
+    pub exchange: String
 }
 
 impl AppConfig {

@@ -20,3 +20,4 @@ validator = { version = "0.21.0", features = ["derive"] }
 futures = "0.3.34"
 thiserror = "2.0.21"
 anyhow = "1.0.104"
+lapin = "4.12.3"

@@ -7,5 +7,9 @@
         "url": "localhost",
         "port": 3000
     },
-    "log_level": "info"
+    "log_level": "info",
+    "rabbitmq": {
+        "url": "mqp://admin:admin_password@localhost:5672/%2F",
+        "exchange": "vehicle.management"
+    }
 }

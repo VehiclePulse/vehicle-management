@@ -10,3 +10,4 @@ pub mod extractors;
 pub mod middleware;
 pub mod logging;
 pub mod errors;
+pub mod rabbitmq;

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use vehicle_management::{
     database,
     config::app_config::AppConfig,
@@ -6,12 +8,13 @@ use vehicle_management::{
     state::AppState,
     routes,
     middleware,
-    logging
+    logging,
+    rabbitmq
 };
 
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     dotenvy::dotenv().ok();
 
     let config = AppConfig::load_config();
@@ -21,11 +24,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let telemetry_repository = telemetry::repository::TelemetryRepository::new(&database);
     let vehicle_service = vehicle::service::VehicleService::new(vehicle_repository);
     let telemetry_service = telemetry::service::TelemetryService::new(telemetry_repository);
+    let rabbitmq_service = rabbitmq::service::RabbitmqPublisher::new(
+        config.rabbitmq.url.clone(), config.rabbitmq.exchange.clone()).await?;
 
     let state = AppState {
         config,
         vehicle_service,
         telemetry_service,
+        rabbitmq: Arc::new(rabbitmq_service)
     };
 
     let server_url = format!("{}:{}", state.config.server.url, state.config.server.port);
