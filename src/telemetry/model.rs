@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
+use crate::extractors::validate_helper::validate_registration_numbers;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Telemetry {
@@ -67,8 +68,9 @@ pub struct UpdateTelemetryRequest {
     pub tire_pressure: TirePressure,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Validate)]
 pub struct BatchTelemetryRequest {
+    #[validate(custom(function = "validate_registration_numbers"))]
     pub registration_numbers: Vec<String>
 }
 

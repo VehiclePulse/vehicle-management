@@ -7,5 +7,5 @@
         "url": "localhost",
         "port": 3000
     },
-    "log_level": "debug"
+    "log_level": "info"
 }

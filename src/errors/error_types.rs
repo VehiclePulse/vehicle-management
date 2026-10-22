@@ -25,7 +25,13 @@ pub enum DomainError {
     VehicleAlreadyExists,
 
     #[error("Telemetry manually cannot be updated for a simulated vehicle")]
-    VehicleTelemetryUpdateFailed
+    VehicleTelemetryUpdateFailed,
+
+    #[error("Telemetry batch request cannot be empty")]
+    TelemetryBatchEmpty,
+
+    #[error("Telemetry data not found")]
+    TelemetryNotFound
 }
 
 
@@ -40,9 +46,11 @@ impl IntoResponse for AppErrorKind {
         let (etitle, estatus, edescription): (String, StatusCode, String) = match self {
             AppErrorKind::Domain(error) => {
                 let status = match &error {
-                    DomainError::VehicleNotFound => StatusCode::NOT_FOUND,
+                    DomainError::VehicleNotFound |
+                    DomainError::TelemetryNotFound => StatusCode::NOT_FOUND,
                     DomainError::VehicleAlreadyExists => StatusCode::CONFLICT,
-                    DomainError::VehicleTelemetryUpdateFailed => StatusCode::CONFLICT
+                    DomainError::VehicleTelemetryUpdateFailed => StatusCode::CONFLICT,
+                    DomainError::TelemetryBatchEmpty => StatusCode::UNPROCESSABLE_ENTITY
                 };
                 (
                     error.to_string(),
@@ -53,18 +61,22 @@ impl IntoResponse for AppErrorKind {
                         DomainError::VehicleNotFound => 
                             String::from("Vehicle doesn't exist"),
                         DomainError::VehicleTelemetryUpdateFailed => 
-                            String::from("Telemetry manually cannot be updated for a simulated vehicle") 
+                            String::from("Telemetry manually cannot be updated for a simulated vehicle") ,
+                        DomainError::TelemetryBatchEmpty =>
+                            String::from("Telemetry batch request cannot be empty"),
+                        DomainError::TelemetryNotFound => 
+                            String::from("Telemetry data not found")
                     }
                 )
             }
 
             AppErrorKind::Infrastructure(error) => {
-                // let title = match &error {
-                //     InfraError::Database(source) => source.to_string(),
-                // };
+                let title = match &error {
+                    InfraError::Database(source) => source.to_string(),
+                };
 
                 (
-                    String::from("Database failure"),
+                    title,
                     StatusCode::INTERNAL_SERVER_ERROR,
                     error.to_string()
                 )

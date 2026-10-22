@@ -44,7 +44,7 @@ impl TelemetryRepository {
             .upsert(true)
             .await?;
 
-        if let Some(_) = &result.upserted_id {
+        if let Some(_) = result.upserted_id {
             tracing::debug!(
                 vehicle_id = %telemetry.vehicle_id,
                 "document was inserted via upsert"

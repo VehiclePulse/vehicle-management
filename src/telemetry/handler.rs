@@ -1,70 +1,60 @@
 use crate::{
-    error::AppError, errors::error_types::{AppErrorKind, InfraError}, extractors::validate_json::ValidateJson, state::AppState, telemetry::{model::{BatchTelemetryRequest, Telemetry, UpdateTelemetryRequest}, validator::validate_manual_update}
+    errors::error_types::{AppErrorKind, DomainError}, extractors::validate_json::ValidateJson, state::AppState, telemetry::{model::{BatchTelemetryRequest, Telemetry, UpdateTelemetryRequest}, validator::validate_manual_update}
 };
 
 use axum::{
-    Json, extract::{Path, State},
+    Json, extract::{Path, State}, http::StatusCode, response::{IntoResponse, Response},
 };
 
 pub async fn get_vehicles_telemetry(
     State(state): State<AppState>,
-    Json(body): Json<BatchTelemetryRequest>
-) -> Result<Json<Vec<Telemetry>>, AppError>  {
+    ValidateJson(body): ValidateJson<BatchTelemetryRequest>
+) -> Result<Response, AppErrorKind>  {
     if body.registration_numbers.is_empty() {
-        return Err(AppError::Business(
-            "Vehicle id's cannot be empty".to_string()
+        return Err(AppErrorKind::Domain(
+            DomainError::TelemetryBatchEmpty
         ));
     } 
 
-    match state
-        .telemetry_repository
+    let telemeries = state
+        .telemetry_service
         .get_telemetry_for_multiple_vehicles(body.registration_numbers)
-        .await {
-            Ok(telemetry_list) => Ok(Json(telemetry_list)),
-            Err(err) => Err(AppError::Database(err))
-        }
+        .await?;
+
+    if telemeries.is_empty() {
+        return Ok(StatusCode::NO_CONTENT.into_response());
+    }
+
+    return Ok(
+        Json(telemeries).into_response()
+    )
 }
 
 pub async fn get_vehicle_telemetry(
     State(state): State<AppState>,
     Path(registration_number): Path<String>,
-) -> Result<Json<Telemetry>, AppError> {
+) -> Result<Response, AppErrorKind> {
     tracing::debug!(
         registration_number = %registration_number,
         "retrieving vehicle telemetry"
     );
 
     let telemetry = state
-        .telemetry_repository
-        .get_by_vehicle_id(registration_number.clone())
-        .await
-        .map_err(|error| {
-            tracing::error!(
-                vehicle_id = %registration_number,
-                error = %error,
-                "failed to retrieve telemetry"
-            );
+        .telemetry_service
+        .get_by_vehicle_id(registration_number)
+        .await?;
 
-            AppError::Database(error)
-        }
-    )?;
-
-    tracing::info!(
-        vehicle_id = %registration_number,
-        "retrieved telemetry record"
-    );
-
-    match telemetry {
-        Some(telemetry) => Ok(Json(telemetry)),
-        None => Err(AppError::NotFound),
-    }
+    Ok((
+        StatusCode::OK, 
+        Json(telemetry)
+    ).into_response())
 }
 
 pub async fn update_vehicle_telemetry(
     State(state): State<AppState>,
     Path(registration_number): Path<String>,
     ValidateJson(request): ValidateJson<UpdateTelemetryRequest>,
-) -> Result<Json<Telemetry>, AppErrorKind> {
+) -> Result<Response, AppErrorKind> {
     tracing::debug!(
         registration_number= %registration_number,
         "processing telemetry update"
@@ -92,28 +82,14 @@ pub async fn update_vehicle_telemetry(
     };
 
     state
-        .telemetry_repository
+        .telemetry_service
         .upsert(telemetry.clone())
-        .await
-        .map_err(|error| {
-            tracing::error!(
-                vehicle_id = %registration_number,
-                error = %error,
-                "failed to save telemetry"
-            );
-
-            AppErrorKind::Infrastructure(
-                InfraError::Database(
-                    anyhow::Error::new(error)
-                    .context("Failed to update telemetry")
-                )
-            )
-        })?;
+        .await?;
 
     tracing::info!(
         vehicle_id = %registration_number,
         "vehicle telemetry updated"
     );
 
-    Ok(Json(telemetry))
+    Ok(Json(telemetry).into_response())
 }

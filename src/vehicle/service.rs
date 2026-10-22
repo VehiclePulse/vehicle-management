@@ -59,7 +59,9 @@ impl VehicleService {
                 )
             })?;
 
-        vehicle.ok_or_else(|| DomainError::VehicleNotFound.into())   
+        vehicle.ok_or(AppErrorKind::Domain(
+            DomainError::VehicleNotFound
+        ))   
     }
 
     pub async fn get_all(
