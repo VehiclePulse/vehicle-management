@@ -54,7 +54,8 @@ impl VehicleRepository {
             .replace_one(doc! {"registration_number": registration_number}, vehicle)
             .await?;
 
-        Ok(result.modified_count == 1)
+        //Ok(result.modified_count == 1)
+        Ok(result.matched_count == 1)
     }
 
     pub async fn delete(&self, registration_number: String) -> mongodb::error::Result<bool> {
